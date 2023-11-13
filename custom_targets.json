@@ -1,0 +1,6 @@
+{
+  "BMI-TEST-BOARD": {
+    "inherits": ["MCU_STM32H723xG"],
+    "device_name": "STM32H723ZTG6U"
+  }
+}
