@@ -10,7 +10,7 @@ int main()
     PinName sclk = PB_3;    // SPI_B_SCK  | CN7
     PinName ssel = PA_4;    // SPI_B_NSS  | CN7
 
-    BMI323 bmi(mosi, miso, sclk, ssel);
+    BMI323SPI bmi(mosi, miso, sclk, ssel);
     ThisThread::sleep_for(10ms);
     
     while (true)
@@ -37,13 +37,13 @@ int main()
         // Run Tests
         switch (testNumber)
         {
-            case 1: //test adc init
+            case 1: // Test BMI init
             {
                 bool init_success = bmi.init();
                 printf(init_success ? "Init Success!\n" : "Init Failed! \n");
                 break;
             }
-            case 9: //exit test suite
+            case 9: // Exit test suite
                 printf("\nExiting Test Suite\n");
                 return 0;
             default:

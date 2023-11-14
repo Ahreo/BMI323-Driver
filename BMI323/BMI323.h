@@ -17,7 +17,7 @@
 /**
  * @brief SPI implementation of a BMI323 driver
  */
-class BMI323
+class BMI323Base
 {
     public:
     /**
@@ -100,41 +100,68 @@ class BMI323
         CMD                     = 0x7E,
         CFG_RES                 = 0x7f
     };
-    
+
+    /**
+     * @brief Initilize the BMI323
+     * 
+     * @return true if initilization is successful, false otherwise
+     */
+    bool init();
+
+    // Read Accel (returns 3 values)
+    void readAccel(uint16_t *x, uint16_t *y, uint16_t *z);
+};
+class BMI323SPI : public BMI323Base
+{
     public:
         /**
-         * @brief Construct a new BMI323 object
+         * @brief Construct a new BMI323 object (SPI)
          * 
          * @param mosi master out, slave in
          * @param miso master in, slave out
          * @param sclk clock
          * @param ssel slave select
          */
-        BMI323(PinName mosi, PinName miso, PinName sclk, PinName ssel);
+        BMI323SPI(PinName mosi, PinName miso, PinName sclk, PinName ssel);
 
         /**
          * @brief Initilize the BMI323
          * 
          * @return true if initilization is successful, false otherwise
+         * Will have to send a dummy byte via readAddressSPI to initilize the BMI323
          */
         bool init();
 
     protected:
         // Read the the passed in address and return the value there
-        int16_t readAddressI2C(Register address);
         int16_t readAddressSPI(Register address);
 
-
         // Write the passed in value to the passed in address
-        void writeAddressI2C(Register address, int16_t value);
         void writeAddressSPI(Register address, int16_t value);
-
-        // Read Accel (returns 3 values)
-        void readAccel(uint16_t *x, uint16_t *y, uint16_t *z);
     
     private:
-        SPI spi;
-        
+        SPI spi;        
+};
+
+class BMI323I2C : public BMI323Base
+{
+    public:
+        /**
+         * @brief Construct a new BMI323 object (I2C)
+         * 
+         * @param sda data line
+         * @param scl clock line
+         */
+        BMI323I2C(PinName sda, PinName scl);
+
+    protected:
+        // Read the the passed in address and return the value there
+        int16_t readAddressI2C(Register address);
+        // Write the passed in value to the passed in address
+        void writeAddressI2C(Register address, int16_t value);
+    
+    private:
+        I2C i2c;
 };
 
 

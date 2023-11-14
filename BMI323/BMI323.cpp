@@ -12,7 +12,7 @@
 #include "BMI323.h"
 #include <cinttypes>
 
-BMI323::BMI323(PinName mosi, PinName miso, PinName sclk, PinName ssel) : 
+BMI323SPI::BMI323SPI(PinName mosi, PinName miso, PinName sclk, PinName ssel) : 
     spi(mosi, miso, sclk, ssel, use_gpio_ssel)
 {
     /**
@@ -31,10 +31,15 @@ BMI323::BMI323(PinName mosi, PinName miso, PinName sclk, PinName ssel) :
      * The automatic selection between ’00’ and ’11’ is controlled based on the value of the clock on the 
      * SCK pin after a falling edge is detected on the chip select pin CSB.
      */
-    
     spi.format(8, 0);
     spi.set_default_write_value(0);     // Making the value of the dummy write value 0
     spi.frequency(10000000);            // Section 7.2.2 Clock Frequency of SPI is 10 MHz
+}
+
+BMI323I2C::BMI323I2C(PinName sda, PinName scl) : 
+    i2c(sda, scl)
+{
+
 }
 
 /**
@@ -48,7 +53,7 @@ BMI323::BMI323(PinName mosi, PinName miso, PinName sclk, PinName ssel) :
  * 
  * @return true if initilization is successful, false otherwise
  */
-bool BMI323::init()
+bool BMI323SPI::init()
 {
     // Send a dummy read to the CMD register, Attempt to read the Chip ID
     int16_t testChipID = readAddressSPI(Register::CHIP_ID);
@@ -63,7 +68,7 @@ bool BMI323::init()
  * @brief read the passed in address using SPI
  * 
  */
-int16_t BMI323::readAddressSPI(Register address)
+int16_t BMI323SPI::readAddressSPI(Register address)
 {
     // Stores the data to be written to the IMU, multiplied by 2 because the data that we 
     // read from the IMU is 2 bytes long
@@ -87,7 +92,7 @@ int16_t BMI323::readAddressSPI(Register address)
  * @brief write the passed in address and using SPI
  * 
  */
-void BMI323::writeAddressSPI(Register address, int16_t data)
+void BMI323SPI::writeAddressSPI(Register address, int16_t data)
 {
     /**
      * @brief 
