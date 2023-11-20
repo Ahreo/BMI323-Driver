@@ -135,9 +135,9 @@ int16_t BMI323SPI::readAddressSPI(Register address)
     int8_t send[2] = {0, static_cast<int8_t>(address)};
     int8_t recieve[2] = {0};
 
-    spi.select();
+    // spi.select();
     spi.write(reinterpret_cast<char *>(send), sizeof(send), reinterpret_cast<char *>(recieve), sizeof(recieve));
-    spi.deselect();
+    // spi.deselect();
     
     // TODO figure out the endianess of the IMU, and if we need to swap the bytes with __builtin_bswap16
     // Section 4:
