@@ -4,7 +4,7 @@
 	// Debug launch for target test_BMI323.
 	{
 	    "type": "cortex-debug",
-	    "name": "Debug test_BMI323 NUCLEO_H723ZG Develop",
+	    "name": "Debug test_BMI323 NUCLEO_H723ZG Debug",
 	    "executable": "C:/Users/Reo/Desktop/BMI323_Driver/build/test_BMI323.elf",
 	    "cwd": "${workspaceRoot}",
 	    "gdbPath": "C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/12.2 mpacbti-bet1/bin/arm-none-eabi-gdb.exe",

@@ -12,6 +12,32 @@
 #include "BMI323.h"
 #include <cinttypes>
 
+/**
+ * @brief Construct a new BMI323Base::BMI323Base object
+ * 
+ */
+BMI323Base::BMI323Base()
+{
+}
+
+/**
+ * @brief Construct a new BMI323I2C::BMI323I2C object
+ * 
+ * @param sda
+ * @param scl
+ */
+BMI323I2C::BMI323I2C(PinName sda, PinName scl) : 
+    i2c(sda, scl)
+{
+    /**
+     * @brief 
+     * 
+     * Section 7.2.1:
+     * For using I²C and I3C, it is recommended to hard-wire the CSB line to VDDIO. Since power-on-reset is only executed
+     * when both VDD and VDDIO are stable, there is no risk of an incorrect protocol detection due to the power-up sequence.
+     */
+}
+
 BMI323SPI::BMI323SPI(PinName mosi, PinName miso, PinName sclk, PinName ssel) : 
     spi(mosi, miso, sclk, ssel, use_gpio_ssel)
 {
@@ -24,6 +50,11 @@ BMI323SPI::BMI323SPI(PinName mosi, PinName miso, PinName sclk, PinName ssel) :
      * 2	    1	        0
      * 3	    1	        1
      * 
+     * 00 --> clk active low, sampling on pos edge
+     * 01 --> clk active low, samling on neg edge
+     * 10 --> clock active high, sampling on neg edge
+     * 11 --> clock active high, sampling on pos edge
+     * 
      * The SPI interface of the device is compatible with two modes:
      * ’00’ [CPOL = ’0’ and CPHA = ’0’]
      * ’11’ [CPOL = ’1’ and CPHA = ’1’].
@@ -34,12 +65,34 @@ BMI323SPI::BMI323SPI(PinName mosi, PinName miso, PinName sclk, PinName ssel) :
     spi.format(8, 0);
     spi.set_default_write_value(0);     // Making the value of the dummy write value 0
     spi.frequency(10000000);            // Section 7.2.2 Clock Frequency of SPI is 10 MHz
+                                        // Drops to 8 MHz when VDDIO < 1.62V
 }
 
-BMI323I2C::BMI323I2C(PinName sda, PinName scl) : 
-    i2c(sda, scl)
+bool BMI323I2C::init()
 {
+    return false;
+}
 
+int16_t BMI323I2C::readAddressI2C(Register address)
+{    
+    // reinterpret cast the data parameter into a char array and store it as a variable called "to_send"
+    int16_t data = 0;
+
+    
+    // i2c.write((int)address, reinterpret_cast<char *>(&data), 1, true);
+    // I2C::Result wResult = i2c.read((int)address, reinterpret_cast<char *>(data), 2);
+
+    return data;
+}
+
+bool BMI323I2C::writeAddressI2C(Register address, int16_t data)
+{
+    return false;
+}
+
+void BMI323I2C::readAccel(accel_data* accel)
+{
+    // TODO
 }
 
 /**
@@ -61,6 +114,13 @@ bool BMI323SPI::init()
     // print out the chip ID in hex
     printf("Chip ID: 0x%04x\n", testChipID);
 
+    // If the init is successful
+    if(testChipID == 0x0043)
+    {
+        return true;
+    }
+
+    // Bad init
     return false;
 }
 
@@ -72,8 +132,8 @@ int16_t BMI323SPI::readAddressSPI(Register address)
 {
     // Stores the data to be written to the IMU, multiplied by 2 because the data that we 
     // read from the IMU is 2 bytes long
-    int8_t send[4] = {0, 0, 0, static_cast<int8_t>(address)};
-    int8_t recieve[4] = {0};
+    int8_t send[2] = {0, static_cast<int8_t>(address)};
+    int8_t recieve[2] = {0};
 
     spi.select();
     spi.write(reinterpret_cast<char *>(send), sizeof(send), reinterpret_cast<char *>(recieve), sizeof(recieve));
@@ -84,7 +144,7 @@ int16_t BMI323SPI::readAddressSPI(Register address)
     // Data is retrieved from the device by sending one address byte and then reading the required number of dummy
     // bytes followed by two bytes for each register file to be read.
     // This is why we are doing recieve[3] << 8 | recieve[2]
-    int16_t result = (static_cast<int16_t>(recieve[3]) << 8) | static_cast<int16_t>(recieve[2]);
+    int16_t result = (static_cast<int16_t>(recieve[1]) << 8) | static_cast<int16_t>(recieve[0]);
     return result;
 }
 
@@ -92,7 +152,7 @@ int16_t BMI323SPI::readAddressSPI(Register address)
  * @brief write the passed in address and using SPI
  * 
  */
-void BMI323SPI::writeAddressSPI(Register address, int16_t data)
+bool BMI323SPI::writeAddressSPI(Register address, int16_t data)
 {
     /**
      * @brief 
@@ -103,5 +163,10 @@ void BMI323SPI::writeAddressSPI(Register address, int16_t data)
      * 
      */
 
+    return false;
+}
 
+void BMI323SPI::readAccel(accel_data* accel)
+{
+    // TODO
 }

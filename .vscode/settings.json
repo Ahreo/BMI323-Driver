@@ -78,7 +78,8 @@
         "xlocmes": "cpp",
         "xloctime": "cpp",
         "xstddef": "cpp",
-        "mstd_atomic": "cpp"
+        "mstd_atomic": "cpp",
+        "*.tcc": "c"
     },
     "cmake.sourceDirectory": "${workspaceRoot}"
 }
