@@ -64,7 +64,7 @@ BMI323SPI::BMI323SPI(PinName mosi, PinName miso, PinName sclk, PinName ssel) :
      */
     spi.format(8, 0);
     spi.set_default_write_value(0);     // Making the value of the dummy write value 0
-    spi.frequency(10000000);            // Section 7.2.2 Clock Frequency of SPI is 10 MHz
+    spi.frequency(10'000'000);          // Section 7.2.2 Clock Frequency of SPI is 10 MHz
                                         // Drops to 8 MHz when VDDIO < 1.62V
 }
 
@@ -108,6 +108,8 @@ void BMI323I2C::readAccel(accel_data* accel)
  */
 bool BMI323SPI::init()
 {
+    printf("Initializing BMI323\n");
+
     // Send a dummy read to the CMD register, Attempt to read the Chip ID
     int16_t testChipID = readAddressSPI(Register::CHIP_ID);
 
@@ -127,24 +129,29 @@ bool BMI323SPI::init()
 /**
  * @brief read the passed in address using SPI
  * 
+ * 
  */
 int16_t BMI323SPI::readAddressSPI(Register address)
 {
-    // Stores the data to be written to the IMU, multiplied by 2 because the data that we 
-    // read from the IMU is 2 bytes long
-    int8_t send[2] = {0, static_cast<int8_t>(address)};
-    int8_t recieve[2] = {0};
+    // Stores the data to be written to the IMU
+    int8_t send = static_cast<int8_t>(address);
+    int8_t recieve[3] = {0};
 
-    // spi.select();
-    spi.write(reinterpret_cast<char *>(send), sizeof(send), reinterpret_cast<char *>(recieve), sizeof(recieve));
-    // spi.deselect();
-    
+
+    spi.select();
+    int numBytesWritten = spi.write(reinterpret_cast<char *>(send), sizeof(send), 
+                                    reinterpret_cast<char *>(recieve), sizeof(recieve));
+    spi.deselect();
+
+    printf("The number of bytes written first is: %d\n", numBytesWritten);
+    printf("recieve[0]: %d recieve[1]: %d recieve[2]: %d\n", recieve[0], recieve[1], recieve[2]);
+
     // TODO figure out the endianess of the IMU, and if we need to swap the bytes with __builtin_bswap16
     // Section 4:
     // Data is retrieved from the device by sending one address byte and then reading the required number of dummy
     // bytes followed by two bytes for each register file to be read.
-    // This is why we are doing recieve[3] << 8 | recieve[2]
-    int16_t result = (static_cast<int16_t>(recieve[1]) << 8) | static_cast<int16_t>(recieve[0]);
+    int16_t result = (static_cast<int16_t>(recieve[2]) << 8) | static_cast<int16_t>(recieve[1]);
+    
     return result;
 }
 

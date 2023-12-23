@@ -4,11 +4,10 @@
 
 int main()
 {
-    //mosi miso sclk ssel
-    PinName mosi = PB_5;    // SPI_B_MOSI | CN7
-    PinName miso = PB_4;    // SPI_B_MISO | CN7
-    PinName sclk = PB_3;    // SPI_B_SCK  | CN7
-    PinName ssel = PA_4;    // SPI_B_NSS  | CN7
+    PinName mosi = PB_5;    // SPI 1
+    PinName miso = PA_6;    // SPI 1
+    PinName sclk = PA_5;    // SPI 1
+    PinName ssel = PD_14;   // SPI 1
 
     BMI323SPI bmi(mosi, miso, sclk, ssel);
     ThisThread::sleep_for(10ms);
