@@ -4,10 +4,18 @@
 
 int main()
 {
+#ifdef TARGET_INTEGRATOR_BOARD
     PinName mosi = PB_5;    // SPI 1
     PinName miso = PA_6;    // SPI 1
     PinName sclk = PA_5;    // SPI 1
     PinName ssel = PD_14;   // SPI 1
+#else
+    // Nucleo board
+    PinName mosi = PB_5;    // SPI 1
+    PinName miso = PA_6;    // SPI 1
+    PinName sclk = PA_5;    // SPI 1
+    PinName ssel = PD_14;   // SPI 1
+#endif
 
     BMI323SPI bmi(mosi, miso, sclk, ssel);
     ThisThread::sleep_for(10ms);

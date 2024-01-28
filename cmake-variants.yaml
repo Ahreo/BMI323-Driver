@@ -14,10 +14,15 @@ buildType:
       long: Optimize generated code
       buildType: Release
 board:
-  default: BMI323
+  default: NUCLEO
   choices:
-    BMI323:
-      short: BMI323
+    NUCLEO:
+      short: NUCLEO
       settings:
         MBED_TARGET: NUCLEO_H723ZG
+        UPLOAD_METHOD: STM32CUBE
+    INTEGRATOR_BOARD:
+      short: INTEGRATOR_BOARD
+      settings:
+        MBED_TARGET: INTEGRATOR_BOARD
         UPLOAD_METHOD: STM32CUBE

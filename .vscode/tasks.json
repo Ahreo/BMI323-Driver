@@ -7,7 +7,7 @@
 			"label": "Build test_BMI323",
 			"type": "shell",
 			"command": "C:/Program Files/CMake/bin/cmake.exe",
-			"args": ["--build", "C:/Users/Reo/Desktop/BMI323_Driver/build", "--target", "test_BMI323"],
+			"args": ["--build", "C:/Users/Reo/Desktop/BMI323-Driver/build", "--target", "test_BMI323"],
 		},
 		// Build test_BMI323 and run the GDB server
 		{

@@ -2,7 +2,6 @@
  * @file BMI323.h
  * @author Reo Tseng
  * @brief Driver for the BMI 323
- * @version 0.1
  * @date 2023-09-26
  * 
  * Datasheets:
@@ -26,9 +25,10 @@ BMI323Base::BMI323Base()
  * @param sda
  * @param scl
  */
-BMI323I2C::BMI323I2C(PinName sda, PinName scl) : 
-    i2c(sda, scl)
+BMI323I2C::BMI323I2C(PinName sda, PinName scl, uint8_t address) : 
+    i2c(sda, scl), i2c_address(address)
 {
+    //TODO
     /**
      * @brief 
      * 
@@ -62,19 +62,21 @@ BMI323SPI::BMI323SPI(PinName mosi, PinName miso, PinName sclk, PinName ssel) :
      * The automatic selection between ’00’ and ’11’ is controlled based on the value of the clock on the 
      * SCK pin after a falling edge is detected on the chip select pin CSB.
      */
-    spi.format(8, 0);
+    spi.format(8, 3);
     spi.set_default_write_value(0);     // Making the value of the dummy write value 0
-    spi.frequency(10'000'000);          // Section 7.2.2 Clock Frequency of SPI is 10 MHz
+    spi.frequency(100'000);          // Section 7.2.2 Clock Frequency of SPI is 10 MHz
                                         // Drops to 8 MHz when VDDIO < 1.62V
 }
 
 bool BMI323I2C::init()
 {
+    //TODO
     return false;
 }
 
 int16_t BMI323I2C::readAddressI2C(Register address)
 {    
+    //TODO
     // reinterpret cast the data parameter into a char array and store it as a variable called "to_send"
     int16_t data = 0;
 
@@ -87,6 +89,7 @@ int16_t BMI323I2C::readAddressI2C(Register address)
 
 bool BMI323I2C::writeAddressI2C(Register address, int16_t data)
 {
+    //TODO
     return false;
 }
 
@@ -110,11 +113,21 @@ bool BMI323SPI::init()
 {
     printf("Initializing BMI323\n");
 
+    // BMI323 requires a rising edge after power up to enable SPI.
+    spi.select();
+    wait_us(200);
+    spi.deselect();
+    wait_us(200);
+
     // Send a dummy read to the CMD register, Attempt to read the Chip ID
     int16_t testChipID = readAddressSPI(Register::CHIP_ID);
 
     // print out the chip ID in hex
     printf("Chip ID: 0x%04x\n", testChipID);
+
+    int16_t status = readAddressSPI(Register::STATUS);
+
+    printf("Status: 0x%04x\n", status);
 
     // If the init is successful
     if(testChipID == 0x0043)
@@ -133,24 +146,29 @@ bool BMI323SPI::init()
  */
 int16_t BMI323SPI::readAddressSPI(Register address)
 {
+    const int recieveSize = 4;
     // Stores the data to be written to the IMU
-    int8_t send = static_cast<int8_t>(address);
-    int8_t recieve[3] = {0};
+    uint8_t send[recieveSize] = {static_cast<uint8_t>(static_cast<uint8_t>(address) | 0x80), 0, 0, 0};
+    uint8_t recieve[recieveSize];
+
+    for(int i=0;i<recieveSize; i++) {
+        printf("send[%d]: %" PRIx8 "\n", i, send[i]);
+    }
 
 
-    spi.select();
-    int numBytesWritten = spi.write(reinterpret_cast<char *>(send), sizeof(send), 
-                                    reinterpret_cast<char *>(recieve), sizeof(recieve));
-    spi.deselect();
+    int numBytesWritten = spi.write(send, sizeof(send), 
+                                    recieve, sizeof(recieve));
 
     printf("The number of bytes written first is: %d\n", numBytesWritten);
-    printf("recieve[0]: %d recieve[1]: %d recieve[2]: %d\n", recieve[0], recieve[1], recieve[2]);
+    for(int i=0;i<recieveSize; i++) {
+        printf("recieve[%d]: %d\n", i, recieve[i]);
+    }
 
     // TODO figure out the endianess of the IMU, and if we need to swap the bytes with __builtin_bswap16
     // Section 4:
     // Data is retrieved from the device by sending one address byte and then reading the required number of dummy
     // bytes followed by two bytes for each register file to be read.
-    int16_t result = (static_cast<int16_t>(recieve[2]) << 8) | static_cast<int16_t>(recieve[1]);
+    int16_t result = (static_cast<int16_t>(recieve[3]) << 8) | static_cast<int16_t>(recieve[2]);
     
     return result;
 }

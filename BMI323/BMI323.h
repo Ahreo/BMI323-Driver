@@ -155,8 +155,9 @@ class BMI323I2C : public BMI323Base
          * 
          * @param sda data line
          * @param scl clock line
+         * @param address address of the BMI323
          */
-        BMI323I2C(PinName sda, PinName scl);
+        BMI323I2C(PinName sda, PinName scl, uint8_t address);
 
         /**
          * @brief Initilize the BMI323
@@ -179,6 +180,7 @@ class BMI323I2C : public BMI323Base
     
     private:
         I2C i2c;
+        const uint8_t i2c_address;
 };
 
 
