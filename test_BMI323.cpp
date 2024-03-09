@@ -29,6 +29,7 @@ int main()
         printf("3.  Test BMI readAccel\n");
         printf("4.  Test BMI gyro init\n");
         printf("5.  Test BMI readGyro\n");
+        printf("6.  Test bulk read\n");
         printf("9.  Exit Test Suite\n");
 
         // scanf("%d", &test);
@@ -88,6 +89,19 @@ int main()
                 }
                 break;
             }
+            case 6: // test bulk read
+            {
+                BMI323Base::accel_gyro_data data;
+                for(int i=0; i<100; i++)
+                {
+                    bmi.bulkRead(&data);
+                    printf("Accel: x: %f, y: %f, z: %f\n", data.accel.x, data.accel.y, data.accel.z);
+                    printf("Gyro: x: %f, y: %f, z: %f\n", data.gyro.x, data.gyro.y, data.gyro.z);
+                    wait_us(500000);
+                }
+                break;
+            }
+            
             case 9: // Exit test suite
             {
                 printf("\nExiting Test Suite\n");
