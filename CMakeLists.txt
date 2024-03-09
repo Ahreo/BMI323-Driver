@@ -21,6 +21,8 @@ add_subdirectory(mbed-os)
 project(BMI323-test)
 
 add_subdirectory(BMI323)
+add_subdirectory(FLASHLOGFR)
+add_subdirectory(SPIFBlockDevice)
 
 add_executable(test_BMI323 test_BMI323.cpp)
 target_link_libraries(test_BMI323 mbed-os BMI323)      # Can also link to mbed-baremetal here

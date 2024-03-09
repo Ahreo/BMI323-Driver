@@ -1,3 +1,6 @@
 [submodule "mbed-os"]
 	path = mbed-os
 	url = https://github.com/mbed-ce/mbed-os.git
+[submodule "FlashLog"]
+	path = FlashLog
+	url = git@github.com:USCRPL/FlashLog.git

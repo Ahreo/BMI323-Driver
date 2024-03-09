@@ -2,10 +2,13 @@
   "INTEGRATOR_BOARD": {
     "inherits": ["NUCLEO_H743ZI2"],
     overrides: {
-      "target.clock-source": "USE_PLL_HSE_EXTC",
+      "clock-source": "USE_PLL_HSI", //USE_PLL_HSI
 
       // Integrator board fitted with 16MHz oscillator
-      "target.hse_value": "16000000"
+      // target namespace moment?
+      "hse_value": "16000000",
+      "stdio_uart_tx": "PB_6",
+      "stdio_uart_rx": "PB_7"
     }
   }
 }

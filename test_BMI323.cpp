@@ -6,9 +6,9 @@ int main()
 {
 #ifdef TARGET_INTEGRATOR_BOARD
     PinName mosi = PB_5;    // SPI 1
-    PinName miso = PA_6;    // SPI 1
-    PinName sclk = PA_5;    // SPI 1
-    PinName ssel = PD_14;   // SPI 1
+    PinName miso = PB_4;    // SPI 1
+    PinName sclk = PB_3;    // SPI 1
+    PinName ssel = PA_15;   // SPI 1
 #else
     // Nucleo board
     PinName mosi = PB_5;    // SPI 1
@@ -25,6 +25,10 @@ int main()
         printf("\nBMI323 Test Suite:\n");
         printf("Select a test: \n");
         printf("1.  Test BMI init\n");
+        printf("2.  Test BMI Accel init\n");
+        printf("3.  Test BMI readAccel\n");
+        printf("4.  Test BMI gyro init\n");
+        printf("5.  Test BMI readGyro\n");
         printf("9.  Exit Test Suite\n");
 
         // scanf("%d", &test);
@@ -50,13 +54,51 @@ int main()
                 printf(init_success ? "Init Success!\n" : "Init Failed! \n");
                 break;
             }
+            case 2: // Test BMI Accel init
+            {
+                bmi.accelSetup();
+                break;
+            }
+            case 3: // Test BMI readAccel
+            {
+                BMI323Base::accel_data accel;
+                for(int i=0; i<100; i++)
+                {
+                    bmi.readAccel(&accel);
+                    printf("Accel: x: %f, y: %f, z: %f\n", accel.x, accel.y, accel.z);
+                    // printf("Accel: x: %d, y: %d, z: %d\n", accel.x, accel.y, accel.z);
+                    wait_us(500000);
+                }
+
+                break;
+            }
+            case 4: // test BMI gyro init
+            {
+                bmi.gyroSetup();
+                break;
+            }
+            case 5: // test BMI readGyro
+            {
+                BMI323Base::gyro_data gyro;
+                for(int i=0; i<100; i++)
+                {
+                    bmi.readGyro(&gyro);
+                    printf("Gyro: x: %f, y: %f, z: %f\n", gyro.x, gyro.y, gyro.z);
+                    wait_us(500000);
+                }
+                break;
+            }
             case 9: // Exit test suite
+            {
                 printf("\nExiting Test Suite\n");
                 return 0;
+            }
             default:
+            {
                 printf("%d Is an Invalid Test Number Selection.\n", testNumber);
                 fflush(stdin);
                 break;
+            }
         }
 
         printf("Done.\r\n");

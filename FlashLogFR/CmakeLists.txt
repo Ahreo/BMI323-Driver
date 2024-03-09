@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.19)
+
+set(FLASHLOGFR_SOURCE FlashLogFR.cpp FlashLogFR.h)
+
+add_library(FLASHLOGFR STATIC ${FLASHLOGFR_SOURCE})
+
+target_include_directories(FLASHLOGFR PUBLIC .)
+
+target_link_libraries(FLASHLOGFR mbed-core-flags SPIFBlockDevice)
+
+add_executable(test_FlashLogFR test_FlashLogFR.cpp)

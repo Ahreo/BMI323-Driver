@@ -15,40 +15,49 @@
 #include <mbed.h>
 
 /**
- * @brief An enum class to store the status of the BMI323's initilization
- * 
- */
-enum InitStatus : uint8_t {
-    INIT_SUCCESS,
-    INIT_FAIL,
-    DEVICE_NOT_FOUND
-};
-
-/**
- * @brief A struct to hold the accel data
- */
-struct accel_data {
-    int16_t x;
-    int16_t y;
-    int16_t z;
-    uint32_t timestamp;
-};
-
-/**
- * @brief A struct to hold the gyro data
-*/
-struct gyro_data {
-    int16_t x;
-    int16_t y;
-    int16_t z;
-    uint32_t timestamp;
-};
-
-/**
  * @brief SPI implementation of a BMI323 driver
  */
 class BMI323Base
 {
+    public:
+    /**
+     * @brief An enum class to store the status of the BMI323's initilization
+     * 
+     */
+    enum InitStatus : uint8_t {
+        INIT_SUCCESS,
+        INIT_FAIL,
+        DEVICE_NOT_FOUND
+    };
+
+    /**
+     * @brief A struct to hold the accel data
+     */
+    struct accel_data {
+        float x;
+        float y;
+        float z;
+    };
+
+    /**
+     * @brief A struct to hold the gyro data
+    */
+    struct gyro_data {
+        float x;
+        float y;
+        float z;
+    };
+
+    /**
+     * @brief Bulk read of the accel and gyro data
+     * 
+     */
+    struct accel_gyro_data {
+        accel_data accel;
+        gyro_data gyro;
+    };
+        
+    
     public:
         /**
          * @brief An enum class for the BMI323's registers
@@ -146,6 +155,10 @@ class BMI323Base
 
         // Read Accel (returns 3 values)
         virtual void readAccel(accel_data* accel) = 0;
+
+        virtual void readGyro(gyro_data* gyro) = 0;
+
+        virtual void bulkRead(accel_gyro_data* data) = 0;
 };
 class BMI323I2C : public BMI323Base
 {
@@ -211,12 +224,27 @@ class BMI323SPI : public BMI323Base
          */
         void readAccel(accel_data* accel) override;
 
+        /**
+         * @brief Read gyro SPI
+         * 
+         */
+        void readGyro(gyro_data* gyro) override;
+
+        /**
+         * @brief Bulk read of the accel and gyro data
+         * 
+         */
+        void bulkRead(accel_gyro_data* data) override;
+
+        void accelSetup();
+        void gyroSetup();
+
     protected:
         // Read the the passed in address and return the value there
-        int16_t readAddressSPI(Register address);
+        void readAddressSPI(Register address, char* data, uint8_t length);
 
         // Write the passed in value to the passed in address
-        bool writeAddressSPI(Register address, int16_t value);
+        bool writeAddressSPI(Register address, uint16_t data);
     
     private:
         SPI spi;        

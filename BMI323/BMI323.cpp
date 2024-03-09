@@ -66,6 +66,12 @@ BMI323SPI::BMI323SPI(PinName mosi, PinName miso, PinName sclk, PinName ssel) :
     spi.set_default_write_value(0);     // Making the value of the dummy write value 0
     spi.frequency(100'000);          // Section 7.2.2 Clock Frequency of SPI is 10 MHz
                                         // Drops to 8 MHz when VDDIO < 1.62V
+
+    // BMI323 requires a rising edge after power up to enable SPI.
+    spi.select();
+    wait_us(200);
+    spi.deselect();
+    wait_us(200);
 }
 
 bool BMI323I2C::init()
@@ -113,19 +119,18 @@ bool BMI323SPI::init()
 {
     printf("Initializing BMI323\n");
 
-    // BMI323 requires a rising edge after power up to enable SPI.
-    spi.select();
-    wait_us(200);
-    spi.deselect();
-    wait_us(200);
+    char data[3];
 
+    readAddressSPI(Register::CHIP_ID, data, 2);
     // Send a dummy read to the CMD register, Attempt to read the Chip ID
-    int16_t testChipID = readAddressSPI(Register::CHIP_ID);
+    int16_t testChipID = (static_cast<int16_t>(data[2]) << 8) | static_cast<int16_t>(data[1]);
 
     // print out the chip ID in hex
     printf("Chip ID: 0x%04x\n", testChipID);
 
-    int16_t status = readAddressSPI(Register::STATUS);
+    readAddressSPI(Register::STATUS, data, 3);
+
+    int16_t status = (static_cast<int16_t>(data[2]) << 8) | static_cast<int16_t>(data[1]);
 
     printf("Status: 0x%04x\n", status);
 
@@ -142,42 +147,21 @@ bool BMI323SPI::init()
 /**
  * @brief read the passed in address using SPI
  * 
- * 
+ * The returned char array is in little endian
  */
-int16_t BMI323SPI::readAddressSPI(Register address)
+void BMI323SPI::readAddressSPI(Register address, char* data, uint8_t length)
 {
-    const int recieveSize = 4;
-    // Stores the data to be written to the IMU
-    uint8_t send[recieveSize] = {static_cast<uint8_t>(static_cast<uint8_t>(address) | 0x80), 0, 0, 0};
-    uint8_t recieve[recieveSize];
-
-    for(int i=0;i<recieveSize; i++) {
-        printf("send[%d]: %" PRIx8 "\n", i, send[i]);
-    }
-
-
-    int numBytesWritten = spi.write(send, sizeof(send), 
-                                    recieve, sizeof(recieve));
-
-    printf("The number of bytes written first is: %d\n", numBytesWritten);
-    for(int i=0;i<recieveSize; i++) {
-        printf("recieve[%d]: %d\n", i, recieve[i]);
-    }
-
-    // TODO figure out the endianess of the IMU, and if we need to swap the bytes with __builtin_bswap16
-    // Section 4:
-    // Data is retrieved from the device by sending one address byte and then reading the required number of dummy
-    // bytes followed by two bytes for each register file to be read.
-    int16_t result = (static_cast<int16_t>(recieve[3]) << 8) | static_cast<int16_t>(recieve[2]);
-    
-    return result;
+    spi.select();
+    spi.write(0x80 | static_cast<uint8_t>(address));
+    spi.write(nullptr, 0, data, length);
+    spi.deselect();
 }
 
 /**
  * @brief write the passed in address and using SPI
  * 
  */
-bool BMI323SPI::writeAddressSPI(Register address, int16_t data)
+bool BMI323SPI::writeAddressSPI(Register address, uint16_t data)
 {
     /**
      * @brief 
@@ -185,13 +169,105 @@ bool BMI323SPI::writeAddressSPI(Register address, int16_t data)
      * "for a write access to a register with reserved content, the whole register must be read, 
      * then the desired content must be updated and the content written (back) to the register
      * to avoid overwriting the reserved part with undefined content."
-     * 
      */
+
+    uint8_t toSend[3] = {static_cast<uint8_t>(address), static_cast<uint8_t>(data & 0xFF), static_cast<uint8_t>((data >> 8) & 0xFF)};
+
+    spi.write(toSend, 3, nullptr, 0);
 
     return false;
 }
 
 void BMI323SPI::readAccel(accel_data* accel)
 {
-    // TODO
+    char data[7];
+
+    readAddressSPI(Register::ACC_DATA_X, data, 7);
+
+    accel->x = static_cast<float>(static_cast<int16_t>((static_cast<int16_t>(data[2]) << 8) | static_cast<int16_t>(data[1])));
+    accel->y = static_cast<float>(static_cast<int16_t>((static_cast<int16_t>(data[4]) << 8) | static_cast<int16_t>(data[3])));
+    accel->z = static_cast<float>(static_cast<int16_t>((static_cast<int16_t>(data[6]) << 8) | static_cast<int16_t>(data[5])));
+
+    accel->x = (accel->x / 16.38f) / 1000.0f;
+    accel->y = (accel->y / 16.38f) / 1000.0f;
+    accel->z = (accel->z / 16.38f) / 1000.0f;
+}
+
+void BMI323SPI::readGyro(gyro_data* gyro)
+{
+    char data[7];
+
+    readAddressSPI(Register::GYR_DATA_X, data, 7);
+
+    gyro->x = static_cast<float>(static_cast<int16_t>((static_cast<int16_t>(data[2]) << 8) | static_cast<int16_t>(data[1])));
+    gyro->y = static_cast<float>(static_cast<int16_t>((static_cast<int16_t>(data[4]) << 8) | static_cast<int16_t>(data[3])));
+    gyro->z = static_cast<float>(static_cast<int16_t>((static_cast<int16_t>(data[6]) << 8) | static_cast<int16_t>(data[5])));
+
+    gyro->x = (gyro->x / 262.144f);
+    gyro->y = (gyro->y / 262.144f);
+    gyro->z = (gyro->z / 262.144f);
+}
+
+void BMI323SPI::bulkRead(accel_gyro_data* data)
+{
+    char toRecieve[13];
+
+    readAddressSPI(Register::ACC_DATA_X, toRecieve, 15);
+
+    data->accel.x = static_cast<float>(static_cast<int16_t>((static_cast<int16_t>(toRecieve[2]) << 8) | static_cast<int16_t>(toRecieve[1])));
+    data->accel.y = static_cast<float>(static_cast<int16_t>((static_cast<int16_t>(toRecieve[4]) << 8) | static_cast<int16_t>(toRecieve[3])));
+    data->accel.z = static_cast<float>(static_cast<int16_t>((static_cast<int16_t>(toRecieve[6]) << 8) | static_cast<int16_t>(toRecieve[5])));
+    data->gyro.x = static_cast<float>(static_cast<int16_t>((static_cast<int16_t>(toRecieve[8]) << 8) | static_cast<int16_t>(toRecieve[7])));
+    data->gyro.y = static_cast<float>(static_cast<int16_t>((static_cast<int16_t>(toRecieve[10]) << 8) | static_cast<int16_t>(toRecieve[9])));
+    data->gyro.z = static_cast<float>(static_cast<int16_t>((static_cast<int16_t>(toRecieve[12]) << 8) | static_cast<int16_t>(toRecieve[11])));
+
+
+    data->accel.x = (data->accel.x / 16.38f) / 1000.0f;
+    data->accel.y = (data->accel.y / 16.38f) / 1000.0f;
+    data->accel.z = (data->accel.z / 16.38f) / 1000.0f;
+
+    data->gyro.x = (data->gyro.x / 262.144f);
+    data->gyro.y = (data->gyro.y / 262.144f);
+    data->gyro.z = (data->gyro.z / 262.144f);
+}
+
+
+void BMI323SPI::accelSetup()
+{
+    uint16_t accelConfig = 0x7000;  // Enables the accelerometer in high performance mode
+    uint16_t accAvgNum = 0x0000;    // no averaging, pass sample without filtering
+    uint16_t LSBperMg = 0x0000;     // +/-2g, 16.38 LSB/mg
+    uint16_t ODR_6_4_KHz = 0x000B;  // ODR = 800Hz
+
+    uint16_t toSend = accelConfig | accAvgNum | LSBperMg | ODR_6_4_KHz;
+    
+    char responseData[3] = {0x0, 0x0, 0x0};
+
+    readAddressSPI(Register::ACC_CONF, responseData, 3);
+    printf("Content of ACC_CONF is: 0x%04x\n", (static_cast<int16_t>(responseData[2]) << 8) | static_cast<int16_t>(responseData[1]));
+
+    writeAddressSPI(Register::ACC_CONF, toSend);
+    readAddressSPI(Register::ACC_CONF, responseData, 3);
+
+    printf("Content of ACC_CONF is: 0x%04x\n", (static_cast<int16_t>(responseData[2]) << 8) | static_cast<int16_t>(responseData[1]));
+}
+
+void BMI323SPI::gyroSetup()
+{
+    uint16_t gyroMode = 0x7000; // Enables the gyroscope in high performance mode
+    uint16_t gyroAvgNum = 0x0000; // no averaging, pass sample without filtering
+    uint16_t gyroRange = 0x0000; // +/-125◦/s, 262.144 LSB/◦/s
+    uint16_t ODR = 0x000B; // ODR = 800Hz
+
+    uint16_t toSend = gyroMode | gyroAvgNum | gyroRange | ODR;
+
+    char responseData[3] = {0x0, 0x0, 0x0};
+
+    readAddressSPI(Register::GYR_CONF, responseData, 3);
+    printf("Content of GYR_CONF is: 0x%04x\n", (static_cast<int16_t>(responseData[2]) << 8) | static_cast<int16_t>(responseData[1]));
+
+    writeAddressSPI(Register::GYR_CONF, toSend);
+    readAddressSPI(Register::GYR_CONF, responseData, 3);
+
+    printf("Content of GYR_CONF is: 0x%04x\n", (static_cast<int16_t>(responseData[2]) << 8) | static_cast<int16_t>(responseData[1]));
 }
