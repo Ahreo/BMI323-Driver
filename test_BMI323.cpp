@@ -16,9 +16,15 @@ int main()
     PinName sclk = PA_5;    // SPI 1
     PinName ssel = PD_14;   // SPI 1
 #endif
-
+    
     BMI323SPI bmi(mosi, miso, sclk, ssel);
     ThisThread::sleep_for(10ms);
+    
+    // for(int i =0; i< 256; i++)
+    // {
+    //     //print all ascii
+    //     printf("%d: %c\n", i, i);
+    // }
     
     while (true)
     {
